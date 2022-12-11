@@ -75,9 +75,13 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git)
 
 source $ZSH/oh-my-zsh.sh
+source /Users/joseabelenda/git/zsh-z/zsh-z.plugin.zsh
+
+zstyle ':completion:*' menu select
+
+plugins=(git zsh-z)
 
 # User configuration
 
@@ -148,42 +152,71 @@ zinit light zdharma/fast-syntax-highlighting
 LS_COLORS=$LS_COLORS:'ow=01;34' ; export LS_COLORS
 
 export GH_HOME=/Users/joseabelenda/git/gh/dist
-alias gt="/Users/joseabelenda/git/gh/dist/index.js"
 
 IJ_CLONE_PATH=/Users/joseabelenda/git/liferay-intellij
 
 
 export PATH=$PATH:$HOME/Library/PackageManager/bin;
 export PATH=$PATH:$GH_HOME;
+
+alias aa='ant_all'
 alias afcb='ant format-source-current-branch'
+alias aux='ps aux | grep tomcat'
+
 alias b='bundles'
+alias bbm='backup_bundle_master'
+
 alias classpath='curl https://raw.githubusercontent.com/jorgediaz-lr/generate-modules-classpath/master/generate_modules_classpath.sh | sh'
 alias cdt='cd ~/git/liferay-portal'
-alias cdr='cd ~/git/raylife'
+
+alias d='docker'
+
+alias g='git'
 alias gck='git checkout'
-alias gd='git diff'
-alias gg='git_grep'
-alias gl='git log'
-alias gppr='git_pull_pr'
-alias gs='git status'
-alias gspr='git_send_pr'
-alias gradle=gw
-alias gradlew=/usr/local/opt/gradle/bin/gradle
-alias gwc='gw clean'
-alias gwcd='gw clean deploy'
-alias gwd='gw deploy'
-alias gwfs='gw formatSource'
-alias tomcat='tomcat'
-alias ictus='ictus'
-alias raylife='raylife'
 alias gcm='git commit -m'
 alias gcp='git cherry-pick'
-alias gsync='gsync'
-alias gb='grebase'
+alias gd='git diff'
+alias gg='git_grep'
+alias ggpr='git_get_pr'
+alias gl='git log'
+alias glo='git log --oneline'
 alias gpcb='gpcb'
+alias gri='git_rebase_interactive'
+alias gs='git status -uno'
+alias gspr='git_send_pr'
+alias gsu='git status'
+alias gsync='gsync'
+alias gt="/Users/joseabelenda/git/gh/dist/index.js"
+alias gradle=gw
+alias gradlew=/usr/local/opt/gradle/bin/gradle
+alias grep-file="grep_file"
+alias gwc='gw clean'
+alias gwcd='gw clean deploy'
+alias gwfd='gw forceDeploy'
+alias gwd='gw deploy'
+alias gwfs='gw formatSource'
+
+alias kt='kill_tomcat'
+
+alias my="docker exec -it mysql mysql -uroot -proot"
+
+alias tomcat='tomcat'
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+function ant_all {
+    b
+    rm -rf master
+    cdt
+    gsync
+    ant all
+    b
+    cp portal-ext.properties master
+    rm -rf master_0
+    cp -r master master_0
+    cdt
+}
 
 function bundles {
     if [ ${#} -eq 0 ]
@@ -193,6 +226,14 @@ function bundles {
     then
         cd ~/liferay/bundles/${1}
     fi
+}
+
+function backup_bundle_master {
+   b
+   cp portal-setup-wizard.properties master
+   rm -rf master_0
+   cp -r master master_0
+   cd
 }
 
 function execute_gradlew {
@@ -246,6 +287,15 @@ function execute_gradlew {
 	fi
 }
 
+function grep_file {
+    if [ ${#} -eq 0 ]
+    then
+        echo "Enter search text."
+    else
+        grep -R ${1} ./ | cut -d: -f1 | uniq
+    fi
+}
+
 function git_grep {
     if [ ${#} -eq 1 ]
     then
@@ -262,7 +312,7 @@ function git_grep {
     fi
 }
 
-function git_pull_pr {
+function git_get_pr {
     if [ ${#} -eq 1 ]
     then
         git fetch origin pull/${1}/head:pr-${1}
@@ -296,33 +346,11 @@ ij() {
 function tomcat {
     if [ ${#} -eq 0 ]
     then
-        /Users/joseabelenda/liferay/bundles/master/tomcat-9.0.53/bin/catalina.sh jpda run
+        /Users/joseabelenda/liferay/bundles/master/tomcat-9.0.68/bin/catalina.sh jpda run
 
     elif [ ${#} -eq 1 ]
     then
-        /Users/joseabelenda/liferay/bundles/master/tomcat-9.0.53/bin/shutdown.sh
-    fi
-}
-
-function ictus {
-    if [ ${#} -eq 0 ]
-    then
-        /Users/joseabelenda/liferay/bundles/liferay-ce-portal-7.4.2-ga3/tomcat-9.0.53/bin/catalina.sh jpda run
-
-    elif [ ${#} -eq 1 ]
-    then
-        /Users/joseabelenda/liferay/bundles/liferay-ce-portal-7.4.2-ga3/tomcat-9.0.53/bin/shutdown.sh
-    fi
-}
-
-function raylife {
-    if [ ${#} -eq 0 ]
-    then
-        /Users/joseabelenda/liferay/bundles/raylife/tomcat-9.0.53/bin/catalina.sh jpda run
-
-    elif [ ${#} -eq 1 ]
-    then
-        /Users/joseabelenda/liferay/bundles/raylife/tomcat-9.0.53/bin/shutdown.sh
+        /Users/joseabelenda/liferay/bundles/master/tomcat-9.0.68/bin/shutdown.sh
     fi
 }
 
@@ -356,7 +384,23 @@ function grebase {
     fi
 }
 
+function git_rebase_interactive {
+    if [ ${#} -eq 1 ]
+    then
+        git rebase -i HEAD~${1}
+    else
+        echo "It's necessary to define number of commits"
+    fi
+}
+
 function gpcb {
     current_branch=$(git branch --show-current) 
     git push origin $current_branch ${1}
 }
+
+function kill_tomcat {
+    ps -ef | grep catalina.startup.Bootstrap | awk '{print $2}' | xargs kill -9
+}
+
+# Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
+export PATH="$PATH:$HOME/.rvm/bin"
